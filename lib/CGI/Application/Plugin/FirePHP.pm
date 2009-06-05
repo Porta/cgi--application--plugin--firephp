@@ -10,6 +10,9 @@ use FirePHP::Dispatcher;
 
 @EXPORT = qw(
   log
+  log_start
+  log_finish
+  headers
 );
 
 sub import { 
@@ -33,37 +36,31 @@ sub import {
     }
 }
 
-our $headers = HTTP::Headers->new;
-our $log = FirePHP::Dispatcher->new($headers);
-
 sub log_start {
     my $self = shift;
-    $self->{'Application::Plugin::FirePHP::__log_object'} = $log;
+    my $headers = HTTP::Headers->new;
+    $self->{'Application::Plugin::FirePHP::__log_object'} = FirePHP::Dispatcher->new($headers);
     $self->{'Application::Plugin::FirePHP::__headers'} = $headers;
     return 1;
 }
 
-sub _log{
-    my $self = shift;
-    return $self->{'Application::Plugin::FirePHP::__log_object'};
-}
-
-sub _headers{
+sub headers{
     my $self = shift;
     return $self->{'Application::Plugin::FirePHP::__headers'};
 }
 
 sub log {
     my $self = shift;
-    return $log;
+    my $message = shift;
+    return $self->{'Application::Plugin::FirePHP::__log_object'};
 }
 
 
 sub log_finish {
     my $self = shift;
-    $log->finalize;
-    foreach my $field ($headers->header_field_names){
-        $self->header_add('-'.$field => $headers->header($field));
+    $self->log->finalize;
+    foreach my $field ($self->headers->header_field_names){
+        $self->header_add('-'.$field => $self->headers->header($field));
     }
     return;
 }
